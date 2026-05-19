@@ -11,3 +11,9 @@ yarn-error.log*
 *.webp
 *.mp4
 *.webm
+
+# Do not ignore assets/images assets
+!assets/images/*.png
+!assets/images/*.jpg
+!assets/images/*.jpeg
+!assets/images/*.webp
