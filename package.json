@@ -18,9 +18,10 @@
     "socket.io": "^4.7.2"
   },
   "description": "## How it works - Use the **Editor** to add Scenes (text + optional image/video) and Characters. - Click **Preview** → the preview page will automatically generate the story using the AI connector and display it. - The **Final** page shows the story and references. You can download `.txt` or PDF.",
-  "main": "index.js",
+  "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
+    "postinstall": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
