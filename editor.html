@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor - StoryCrafter</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="editor-page">
+  <header style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>Story Editor</h1>
+    <a href="mystories.html" class="btn">My Stories</a>
+  </header>
+
+  <main style="max-width: 1200px;">
+    <!-- Metadata Bar -->
+    <div class="container flex-row" style="justify-content: center; align-items: center; flex-wrap: wrap;">
+      <input id="title" placeholder="Story Title" style="width: 250px;" />
+      <input id="genre" placeholder="Genre (e.g., Fantasy)" style="width: 200px;" />
+      <input id="tone" placeholder="Tone (e.g., Whimsical)" style="width: 200px;" />
+      <button id="save-meta" class="btn btn-success">Save Meta</button>
+      <a href="preview.html" id="preview-link" class="btn">Preview Story</a>
+    </div>
+
+    <!-- Main Editor Layout -->
+    <div class="grid-cols">
+      
+      <!-- Scenes Section -->
+      <div class="container scenes-container">
+        <h3>🎬 Scenes</h3>
+        <div class="flex-row">
+          <button id="add-scene" class="btn">Add</button>
+          <button id="del-scene" class="btn btn-danger">Delete</button>
+        </div>
+        <ul id="scene-list"></ul>
+      </div>
+
+      <!-- Text Editor -->
+      <div class="container">
+        <h3>Current Scene</h3>
+        <textarea id="scene-text" placeholder="Write your scene..." style="height: 200px; resize: vertical;"></textarea>
+        
+        <label>🖼️ Scene Image:</label>
+        <input type="file" id="scene-image" accept="image/*" />
+        
+        <label>🎥 Scene Video:</label>
+        <input type="file" id="scene-video" accept="video/*" />
+
+        <div class="flex-row" style="margin-top: 15px;">
+          <button id="save-scene" class="btn btn-success">Save Scene</button>
+        </div>
+      </div>
+
+      <!-- Characters Section -->
+      <div class="container characters-container">
+        <h3>👤 Characters</h3>
+        <div class="flex-row">
+          <button id="add-char" class="btn">Add</button>
+          <button id="del-char" class="btn btn-danger">Delete</button>
+        </div>
+        <ul id="char-list"></ul>
+
+        <div id="char-form" style="display: none; margin-top: 15px;">
+          <input id="char-name" placeholder="Character Name" />
+          <textarea id="char-desc" placeholder="Character Description" style="height: 100px;"></textarea>
+          <button id="save-char" class="btn btn-success">Save Character</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { KEYS, load, save } from "./assets/js/storage.js";
+
+    let scenes = load(KEYS.SCENES) || [];
+    if (!Array.isArray(scenes)) scenes = [];
+    
+    let characters = load(KEYS.CHARACTERS) || [];
+    if (!Array.isArray(characters)) characters = [];
+    
+    let currentScene = 0;
+
+    const titleInp = document.getElementById("title");
+    const genreInp = document.getElementById("genre");
+    const toneInp = document.getElementById("tone");
+    
+    titleInp.value = load(KEYS.TITLE, "");
+    genreInp.value = localStorage.getItem("storyGenre") || "";
+    toneInp.value = localStorage.getItem("storyTone") || "";
+
+    document.getElementById("save-meta").onclick = () => {
+      save(KEYS.TITLE, titleInp.value.trim());
+      localStorage.setItem("storyGenre", genreInp.value.trim());
+      localStorage.setItem("storyTone", toneInp.value.trim());
+      alert("Metadata Saved!");
+    };
+
+    function renderScenes() {
+      const list = document.getElementById("scene-list");
+      list.innerHTML = "";
+      scenes.forEach((s, i) => {
+        const li = document.createElement("li");
+        li.className = "scene-item" + (i === currentScene ? " active" : "");
+        li.textContent = `Scene ${i+1}`;
+        li.onclick = () => loadScene(i);
+        list.appendChild(li);
+      });
+    }
+
+    function loadScene(i) {
+      if (scenes.length === 0) {
+        currentScene = 0;
+        document.getElementById("scene-text").value = "";
+      } else {
+        currentScene = Math.max(0, Math.min(i, scenes.length - 1));
+        const s = scenes[currentScene];
+        document.getElementById("scene-text").value = s.text || "";
+      }
+      document.getElementById("scene-image").value = "";
+      document.getElementById("scene-video").value = "";
+      renderScenes();
+    }
+
+    async function uploadFile(file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      });
+      
+      if (!res.ok) {
+        if (res.status === 401) {
+          window.location.href = 'login.html';
+        }
+        const error = await res.json();
+        throw new Error(error.error || "Failed to upload file");
+      }
+      
+      const data = await res.json();
+      return data.url;
+    }
+
+    document.getElementById("add-scene").onclick = () => {
+      scenes.push({ text: "", image: "", video: "" });
+      save(KEYS.SCENES, scenes);
+      loadScene(scenes.length - 1);
+    };
+
+    document.getElementById("del-scene").onclick = () => {
+      if (scenes.length === 0) return;
+      scenes.splice(currentScene, 1);
+      save(KEYS.SCENES, scenes);
+      loadScene(currentScene);
+    };
+
+    document.getElementById("save-scene").onclick = async () => {
+      if (scenes.length === 0) {
+        alert("Please add a scene first!");
+        return;
+      }
+      const text = document.getElementById("scene-text").value;
+      const imageFile = document.getElementById("scene-image").files[0];
+      const videoFile = document.getElementById("scene-video").files[0];
+      
+      let image = scenes[currentScene].image || "";
+      let video = scenes[currentScene].video || "";
+      
+      try {
+        if (imageFile) image = await uploadFile(imageFile);
+        if (videoFile) video = await uploadFile(videoFile);
+      } catch (err) {
+        alert("Upload failed: " + err.message);
+        return;
+      }
+      
+      scenes[currentScene] = { text, image, video };
+      save(KEYS.SCENES, scenes);
+      alert("Scene saved!");
+      renderScenes();
+    };
+
+    function renderChars() {
+      const list = document.getElementById("char-list");
+      list.innerHTML = "";
+      characters.forEach((c, i) => {
+        const li = document.createElement("li");
+        li.className = "char-item";
+        li.textContent = `${c.name}`;
+        li.onclick = () => editChar(i);
+        list.appendChild(li);
+      });
+    }
+
+    function editChar(i) {
+      const f = document.getElementById("char-form");
+      f.style.display = "block";
+      document.getElementById("char-name").value = characters[i].name || "";
+      document.getElementById("char-desc").value = characters[i].description || "";
+      f.dataset.index = i;
+    }
+
+    document.getElementById("add-char").onclick = () => {
+      const f = document.getElementById("char-form");
+      f.style.display = "block";
+      document.getElementById("char-name").value = "";
+      document.getElementById("char-desc").value = "";
+      f.dataset.index = characters.length;
+    };
+
+    document.getElementById("save-char").onclick = () => {
+      const f = document.getElementById("char-form");
+      const idx = Number(f.dataset.index);
+      const name = document.getElementById("char-name").value.trim();
+      const description = document.getElementById("char-desc").value.trim();
+      
+      if (!name) { alert("Name is required!"); return; }
+      
+      characters[idx] = { name, description };
+      save(KEYS.CHARACTERS, characters);
+      renderChars();
+      f.style.display = "none";
+    };
+
+    document.getElementById("del-char").onclick = () => {
+      const f = document.getElementById("char-form");
+      const idx = f.dataset.index !== undefined ? Number(f.dataset.index) : -1;
+      
+      if (idx >= 0 && idx < characters.length) {
+        characters.splice(idx, 1);
+        save(KEYS.CHARACTERS, characters);
+        renderChars();
+        f.style.display = "none";
+        delete f.dataset.index;
+      } else {
+        alert("Select a character to delete first!");
+      }
+    };
+
+    // Auto-login check (soft redirect if user accesses editor directly)
+    fetch('/api/auth/me').then(res => {
+      if (!res.ok) window.location.href = 'login.html';
+    });
+
+    renderScenes();
+    loadScene(0);
+    renderChars();
+  </script>
+</body>
+</html>

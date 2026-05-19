@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Final Story - StoryCrafter</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="final-page">
+  <header>
+    <h1>Final Story</h1>
+  </header>
+
+  <main>
+    <div class="container">
+      <h2 id="title" style="margin-top: 0;">Loading...</h2>
+
+      <div id="story" style="font-size: 18px; line-height: 1.6; margin-bottom: 20px;"></div>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button id="downloadTxt" class="btn" style="display:none;">⬇ Download TXT</button>
+        <button id="downloadPdf" class="btn btn-danger" style="display:none;">⬇ Download PDF</button>
+      </div>
+
+      <div>
+        <a href="mystories.html" class="btn btn-success">📚 Back to My Stories</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function getStoryId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("id");
+    }
+
+    let currentStory = null;
+
+    async function loadStory() {
+      const id = getStoryId();
+      if (!id) {
+        document.getElementById("title").textContent = "❌ No Story ID provided";
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/stories/${id}`);
+        if (!res.ok) {
+          if (res.status === 401) window.location.href = 'login.html';
+          throw new Error('Story not found');
+        }
+
+        currentStory = await res.json();
+        const extractedTitle = currentStory.prompt.split('\n')[0].replace('Title: ', '') || 'Untitled';
+        
+        document.getElementById("title").textContent = extractedTitle;
+
+        const out = document.getElementById("story");
+        out.innerHTML = "";
+        (currentStory.storyText || "").split(/\n\s*\n/).forEach(block => {
+          const p = document.createElement("p");
+          p.style.marginBottom = "15px";
+          p.textContent = block.trim();
+          out.appendChild(p);
+        });
+
+        document.getElementById("downloadTxt").style.display = "inline-block";
+        document.getElementById("downloadPdf").style.display = "inline-block";
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById("title").textContent = "❌ Error loading story";
+      }
+    }
+
+    document.getElementById("downloadTxt").onclick = () => {
+      if (!currentStory) return;
+      const extractedTitle = currentStory.prompt.split('\n')[0].replace('Title: ', '') || 'Untitled';
+      const content = `${extractedTitle}\n\n${currentStory.storyText}`;
+      const blob = new Blob([content], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = extractedTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase() + ".txt";
+      a.click();
+    };
+
+    document.getElementById("downloadPdf").onclick = () => {
+      if (!currentStory) return;
+      const btn = document.getElementById("downloadPdf");
+      const originalText = btn.textContent;
+      btn.textContent = "Generating PDF...";
+      btn.disabled = true;
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 20;
+        const maxLineWidth = pageWidth - margin * 2;
+        
+        let cursorY = 20;
+        
+        const extractedTitle = currentStory.prompt.split('\n')[0].replace('Title: ', '') || 'Untitled';
+        
+        // Add Title
+        doc.setFontSize(22);
+        const titleLines = doc.splitTextToSize(extractedTitle, maxLineWidth);
+        titleLines.forEach(line => {
+          if (cursorY > 270) { doc.addPage(); cursorY = 20; }
+          doc.text(line, margin, cursorY);
+          cursorY += 10;
+        });
+        cursorY += 10;
+        
+        // Add Story Text
+        doc.setFontSize(12);
+        const lines = doc.splitTextToSize(currentStory.storyText || "", maxLineWidth);
+        
+        lines.forEach(line => {
+          if (cursorY > 280) {
+            doc.addPage();
+            cursorY = 20;
+          }
+          doc.text(line, margin, cursorY);
+          cursorY += 7;
+        });
+        
+        doc.save(`${extractedTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
+      } catch (err) {
+        console.error("PDF generation failed:", err);
+        alert("Error generating PDF.");
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    };
+
+    document.addEventListener("DOMContentLoaded", loadStory);
+  </script>
+</body>
+</html>

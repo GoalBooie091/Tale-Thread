@@ -1,0 +1,176 @@
+/* assets/css/style.css */
+body {
+  font-family: Arial, sans-serif;
+  background: url('../images/background.png') no-repeat center center fixed;
+  background-size: cover;
+  color: #333;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Page‑specific backgrounds */
+.login-page {
+  background: url('../images/login_background.png') no-repeat center center fixed;
+  background-size: cover;
+}
+.signup-page {
+  background: url('../images/signup_background.png') no-repeat center center fixed;
+  background-size: cover;
+}
+.home-page {
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.5), rgba(44, 62, 80, 0.85)), url('../images/background.png') no-repeat center center fixed;
+  background-size: cover;
+}
+.editor-page {
+  background: linear-gradient(135deg, rgba(230, 126, 34, 0.4), rgba(44, 62, 80, 0.85)), url('../images/background.png') no-repeat center center fixed;
+  background-size: cover;
+}
+.preview-page {
+  background: linear-gradient(135deg, rgba(155, 89, 182, 0.5), rgba(44, 62, 80, 0.85)), url('../images/background.png') no-repeat center center fixed;
+  background-size: cover;
+}
+.final-page {
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.4), rgba(44, 62, 80, 0.85)), url('../images/background.png') no-repeat center center fixed;
+  background-size: cover;
+}
+.mystories-page {
+  background: linear-gradient(135deg, rgba(41, 128, 185, 0.5), rgba(44, 62, 80, 0.85)), url('../images/background.png') no-repeat center center fixed;
+  background-size: cover;
+}
+
+/* Banner images */
+.banner-img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+/* Overlay used by containers for better contrast */
+.container {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(8px);
+  position: relative;
+  z-index: 1;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+header, .header-bar {
+  background: rgba(44,62,80,0.85);
+  color: white;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.header-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: -1;
+}
+
+main {
+  flex: 1;
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Container styling merged above */
+
+h1, h2, h3 {
+  color: #2c3e50;
+}
+
+button, .btn {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+button:hover, .btn:hover {
+  background-color: #2980b9;
+}
+
+.btn-danger { background-color: #e74c3c; }
+.btn-danger:hover { background-color: #c0392b; }
+
+.btn-success { background-color: #2ecc71; }
+.btn-success:hover { background-color: #27ae60; }
+
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.flex-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.grid-cols {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .grid-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li.scene-item, li.char-item {
+  padding: 10px;
+  background: #ecf0f1;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+li.active {
+  background: #3498db;
+  color: white;
+}
+
+/* Panel Backgrounds (SVGs) */
+.scenes-container {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%232c3e50' opacity='0.08'%3E%3Cpath d='M10 20h80v15H10zm0 20h80v40H10zm15 10h15v10H25zm25 0h25v20H50z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: bottom 20px right 20px !important;
+  background-size: 80px !important;
+}
+
+.characters-container {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%232c3e50' opacity='0.08'%3E%3Ccircle cx='50' cy='35' r='18'/%3E%3Cpath d='M20 80c0-20 15-30 30-30s30 10 30 30z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: bottom 20px right 20px !important;
+  background-size: 80px !important;
+}

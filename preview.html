@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview Story - StoryCrafter</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    /* Google Translate styling */
+    #google_translate_element {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+  </style>
+</head>
+<body class="preview-page">
+  <div id="google_translate_element"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({ pageLanguage: 'en' }, 'google_translate_element');
+    }
+  </script>
+  <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+  <header>
+    <h1>📖 Story Preview</h1>
+  </header>
+
+  <main>
+    <div class="container" style="text-align: center;">
+      <p id="scene-text" style="font-size: 18px; margin-bottom: 15px;"></p>
+      <img id="scene-image" style="max-height: 300px; display: none; margin: 0 auto 15px;" />
+      <video id="scene-video" style="max-height: 300px; display: none; margin: 0 auto 15px;" controls></video>
+      
+      <div style="margin-top: 20px;">
+        <button id="prev" class="btn">⬅ Previous</button>
+        <button id="next" class="btn">Next ➡</button>
+      </div>
+    </div>
+
+    <div class="container" style="text-align: center;">
+      <p id="ai-status" style="font-style: italic;">Generating story with AI...</p>
+      
+      <div id="ai-story-container" style="display: none; margin-top: 20px;">
+        <h2>✨ Generated Story</h2>
+        <div id="ai-story" style="text-align: left; background: #f9f9f9; padding: 15px; border-radius: 4px;"></div>
+        
+        <div style="margin-top: 20px;">
+          <a href="editor.html" class="btn" style="background-color: #f39c12;">✏ Back to Editor</a>
+          <a id="go-final" href="#" class="btn btn-success">Go to Final Story ➡</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { KEYS, load, save } from "./assets/js/storage.js";
+
+    let scenes = load(KEYS.SCENES) || [];
+    let characters = load(KEYS.CHARACTERS) || [];
+    let currentIndex = 0;
+    let currentStoryId = null;
+
+    function renderScene(i) {
+      const scene = scenes[i];
+      if (!scene) return;
+      document.getElementById("scene-text").textContent = scene.text || "";
+      const img = document.getElementById("scene-image");
+      const video = document.getElementById("scene-video");
+      
+      if (scene.image) {
+        img.src = scene.image;
+        img.style.display = "block";
+      } else {
+        img.style.display = "none";
+      }
+      
+      if (scene.video) {
+        video.src = scene.video;
+        video.style.display = "block";
+      } else {
+        video.style.display = "none";
+      }
+    }
+
+    async function autoGenerate() {
+      const title = load(KEYS.TITLE, "Untitled Story");
+      const genre = localStorage.getItem("storyGenre") || "";
+      const tone = localStorage.getItem("storyTone") || "";
+      
+      const prompt = `Title: ${title}\nGenre: ${genre}\nTone: ${tone}\n\nCharacters: ${characters.map(c => `${c.name}: ${c.description || ''}`).join(", ")}\nScenes: ${scenes.map((s, i) => `(${i + 1}) ${s.text}`).join("\n")}`;
+
+      try {
+        const resp = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt })
+        });
+        
+        if (!resp.ok) {
+          if (resp.status === 401) window.location.href = 'login.html';
+          throw new Error("Failed to generate story");
+        }
+
+        const newStory = await resp.json(); // This is the Prisma DB object
+        currentStoryId = newStory.id;
+
+        const out = document.getElementById("ai-story");
+        out.innerHTML = "";
+        (newStory.storyText || "").split(/\n\s*\n/).forEach(block => {
+          const p = document.createElement("p");
+          p.style.marginBottom = "10px";
+          p.textContent = block.trim();
+          out.appendChild(p);
+        });
+
+        document.getElementById("ai-status").textContent = "✅ Story generated!";
+        document.getElementById("ai-story-container").style.display = "block";
+        document.getElementById("go-final").href = `final.html?id=${currentStoryId}`;
+        
+      } catch (err) {
+        console.error(err);
+        document.getElementById("ai-status").textContent = "❌ Error generating story.";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderScene(0);
+      document.getElementById("prev").onclick = () => { if (currentIndex > 0) { currentIndex--; renderScene(currentIndex); } };
+      document.getElementById("next").onclick = () => { if (currentIndex < scenes.length - 1) { currentIndex++; renderScene(currentIndex); } };
+      autoGenerate();
+    });
+  </script>
+</body>
+</html>

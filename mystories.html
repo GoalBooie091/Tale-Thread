@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Stories - StoryCrafter</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="mystories-page">
+  <header style="display: flex; justify-content: space-between; align-items: center;">
+    <h1>StoryCrafter - My Stories</h1>
+    <div>
+      <a href="editor.html" class="btn btn-success">Create New Story</a>
+      <button id="logoutBtn" class="btn btn-danger" style="margin-left: 10px;">Logout</button>
+    </div>
+  </header>
+  
+  <main>
+    <h2>Your Generated Stories</h2>
+    <div id="stories-list">
+      <p>Loading stories...</p>
+    </div>
+  </main>
+
+  <script>
+    async function loadStories() {
+      try {
+        const res = await fetch('/api/stories');
+        if (!res.ok) {
+          if (res.status === 401) {
+            window.location.href = 'login.html';
+          }
+          throw new Error('Failed to load stories');
+        }
+        
+        const stories = await res.json();
+        const list = document.getElementById('stories-list');
+        list.innerHTML = '';
+        
+        if (stories.length === 0) {
+          list.innerHTML = '<p>You have not generated any stories yet.</p>';
+          return;
+        }
+        
+        stories.forEach(story => {
+          const card = document.createElement('div');
+          card.className = 'container';
+          
+          const title = document.createElement('h3');
+          title.textContent = story.prompt.split('\n')[0].replace('Title: ', '') || 'Untitled';
+          
+          const date = document.createElement('p');
+          date.style.fontSize = '12px';
+          date.style.color = '#7f8c8d';
+          date.textContent = new Date(story.createdAt).toLocaleString();
+          
+          const link = document.createElement('a');
+          link.href = `final.html?id=${story.id}`;
+          link.className = 'btn';
+          link.textContent = 'View Story';
+          link.style.marginTop = '10px';
+          
+          card.appendChild(title);
+          card.appendChild(date);
+          card.appendChild(link);
+          list.appendChild(card);
+        });
+      } catch (err) {
+        console.error(err);
+        document.getElementById('stories-list').innerHTML = '<p>Error loading stories.</p>';
+      }
+    }
+
+    document.getElementById('logoutBtn').onclick = async () => {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = 'index.html';
+    };
+
+    document.addEventListener('DOMContentLoaded', loadStories);
+  </script>
+</body>
+</html>
